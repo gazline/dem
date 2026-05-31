@@ -1,0 +1,5 @@
+Скачать зависимости:
+pip install -r requirements.txt (pillow и psycopg2)
+Запустить .venv
+.venv\Scripts\activate (это Pycharm)
+Crtl+Shift+P -> Набрать Python -> Создать venv
