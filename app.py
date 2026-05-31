@@ -14,23 +14,27 @@ from db import Database
 from orders import OrdersFrame
 from registration import open_register_window
 
+
 class GreenGardenApp:
-    """Главное окно: вход, выход и подключение вкладок по роли пользователя."""
+    """Главное окно приложения: вход, выход и вкладки по ролям."""
+
     def __init__(self, root):
+        """Создает окно, подключается к БД и показывает экран входа."""
         self.root = root
+        self.user = None
+        self.logo_image = None
+
         try:
             self.db = Database()
         except Exception as exc:
             messagebox.showerror(
                 "Ошибка PostgreSQL",
                 "Не удалось подключиться к базе PostgreSQL.\n"
-                "Проверьте настройки PG_HOST, PG_PORT, PG_DATABASE, PG_USER, PG_PASSWORD.\n\n"
+                "Проверьте .env: PG_HOST, PG_PORT, PG_DATABASE, PG_USER, PG_PASSWORD.\n\n"
                 f"{exc}",
             )
             self.root.destroy()
             return
-        self.user = None
-        self.logo_image = None
 
         self.root.title("ООО «Зелёный Сад»")
         self.root.geometry("1120x720")
@@ -40,6 +44,7 @@ class GreenGardenApp:
         self.show_login()
 
     def setup_style(self):
+        """Настраивает внешний вид стандартных Tkinter/ttk элементов."""
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("TFrame", background=BG)
@@ -54,22 +59,27 @@ class GreenGardenApp:
         style.map("Accent.TButton", background=[("active", "#16A34A")])
 
     def clear(self):
+        """Очищает окно перед переключением экранов."""
         for widget in self.root.winfo_children():
             widget.destroy()
 
     def load_logo(self, parent, size=(260, 145)):
+        """Загружает логотип. Если логотипа нет, показывает текстовое название."""
         if Image and ImageTk and LOGO_PATH.exists():
             image = Image.open(LOGO_PATH)
             image.thumbnail(size)
             self.logo_image = ImageTk.PhotoImage(image)
             return ttk.Label(parent, image=self.logo_image, background=BG)
+
         if LOGO_PNG_PATH.exists():
             self.logo_image = tk.PhotoImage(file=str(LOGO_PNG_PATH))
             self.logo_image = self.logo_image.subsample(3, 3)
             return ttk.Label(parent, image=self.logo_image, background=BG)
+
         return ttk.Label(parent, text="Зелёный Сад", style="Title.TLabel")
 
     def show_login(self):
+        """Показывает экран входа, регистрации и гостевого режима."""
         self.clear()
         wrapper = ttk.Frame(self.root, padding=30)
         wrapper.pack(fill="both", expand=True)
@@ -89,22 +99,25 @@ class GreenGardenApp:
         ttk.Label(form, text="Вход в систему", font=("Segoe UI", 20, "bold"), background="white").pack(pady=(10, 24))
 
         ttk.Label(form, text="Логин", background="white").pack(anchor="w")
-        login_var = tk.StringVar(value="admin_garden")
+        login_var = tk.StringVar()
         login_entry = ttk.Entry(form, textvariable=login_var, width=32)
         login_entry.pack(pady=(4, 14))
 
         ttk.Label(form, text="Пароль", background="white").pack(anchor="w")
-        password_var = tk.StringVar(value="GardenAdmin2026!")
+        password_var = tk.StringVar()
         password_entry = ttk.Entry(form, textvariable=password_var, show="*", width=32)
         password_entry.pack(pady=(4, 20))
 
         def do_login():
+            """Проверяет учетные данные и открывает основной интерфейс."""
             login = login_var.get().strip()
             password = password_var.get()
             user = self.db.authenticate(login, password)
+
             if not user:
                 messagebox.showerror("Ошибка", "Неверный логин или пароль")
                 return
+
             self.user = dict(user)
             self.db.log(login, "Вход в систему")
             self.show_main()
@@ -115,7 +128,7 @@ class GreenGardenApp:
 
         ttk.Label(
             form,
-            text="Тестовые роли: admin_garden / manager01 / client_ivanov",
+            text="Учетные данные должны быть в таблице users.",
             background="white",
             foreground=BROWN,
             wraplength=260,
@@ -124,6 +137,7 @@ class GreenGardenApp:
         login_entry.focus()
 
     def login_as_guest(self):
+        """Открывает систему в роли гостя без записи пользователя в БД."""
         self.user = {
             "id": None,
             "login": "guest",
@@ -134,10 +148,11 @@ class GreenGardenApp:
         self.show_main()
 
     def show_register(self):
-        # Регистрация вынесена в отдельный файл registration.py.
+        """Открывает окно регистрации из отдельного файла registration.py."""
         open_register_window(self.root, self.db)
 
     def show_main(self):
+        """Показывает вкладки системы с учетом роли пользователя."""
         self.clear()
         role = self.user["role_name"]
 
@@ -157,12 +172,12 @@ class GreenGardenApp:
         catalog = CatalogFrame(notebook, self.db, self.user)
         notebook.add(catalog, text="Каталог товаров")
 
-        # Права доступа по ролям: менеджер и админ видят заказы, клиент и гость - нет.
+        # Менеджер и администратор видят заказы. Гость и клиент - только каталог.
         if role in ("manager", "admin"):
             orders = OrdersFrame(notebook, self.db, self.user)
             notebook.add(orders, text="Заказы")
 
-        # Администратор получает отдельную вкладку с CRUD и справочниками.
+        # Если в вашем варианте нет админки, можно удалить этот блок и файл admin_panel.py.
         if role == "admin":
             admin = AdminFrame(notebook, self.db, self.user)
             notebook.add(admin, text="Администрирование")

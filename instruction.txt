@@ -1,5 +1,14 @@
-Скачать зависимости:
-pip install -r requirements.txt (pillow и psycopg2)
-Запустить .venv
-.venv\Scripts\activate (это Pycharm)
-Crtl+Shift+P -> Набрать Python -> Создать venv
+ПАРНИ ЭТО ТОЛЬКО СКЕЛЕТ!!! НЕ ГОТОВЫЙ ПРОЕКТ, ПРОСЬБА ДЕЛАТЬ ЕГО ПОД СЕБЯ
+1. Создать виртуальное окружение:
+   File -> Settings -> Project:* -> Py intepreter -> add local -> ok/apply
+
+2. Активировать:
+   .venv\Scripts\activate
+
+3. Установить зависимости:
+   pip install -r requirements.txt
+
+4. Проверить .env и запустить:
+   python main.py
+
+Обязательно переделать .env и логотип переделать
